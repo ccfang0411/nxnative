@@ -228,16 +228,19 @@ void front_save_failed(int err) {
 // Audio session: the frames RemoteIO asks for in each callback follow the I/O buffer duration, about 21 ms by default on iOS (1024 frames at 48 kHz). The game keeps only 4 blocks × 5 ms = 20 ms in flight,
 // so every callback came up 1.3 ms short and was zero-filled, about 47 gaps per second (crackling; reproducible on the Mac by forcing 1024-frame callbacks: 1999 underruns in 2000 callbacks). Ask for 5 ms and the system picks the nearest it supports;
 // the category is Playback, as a game's or media app's: the ring / silent switch does not mute it (the default SoloAmbient follows the switch, which silenced the game whenever the phone was on silent) and it still interrupts other apps' audio.
+// With DM_AUDIO=0 (the launcher's Game audio off) the host uses the silent sink and the session becomes Ambient, which mixes with other apps' audio instead of interrupting it, so music can keep playing.
 // Set once at boot and again on return to the foreground (the system may reset it after an interruption)
 static int g_session_off;   // the last activation failed (another app or a call still held the session): tried again when the app becomes active
 void front_ios_audio_session(void) {
     AVAudioSession *s = AVAudioSession.sharedInstance; NSError *e = nil;
-    if (![s setCategory:AVAudioSessionCategoryPlayback error:&e]) LOG("[RED] audio session category could not be set: %s", e.localizedDescription.UTF8String);
+    const char *a = getenv("DM_AUDIO"); BOOL muted = a && atoi(a) == 0;
+    NSString *category = muted ? AVAudioSessionCategoryAmbient : AVAudioSessionCategoryPlayback;
+    if (![s setCategory:category error:&e]) LOG("[RED] audio session category could not be set: %s", e.localizedDescription.UTF8String);
     [s setPreferredSampleRate:48000 error:nil];
     if (![s setPreferredIOBufferDuration:0.005 error:&e]) LOG("[RED] audio session I/O buffer duration could not be set: %s", e.localizedDescription.UTF8String);
     g_session_off = ![s setActive:YES error:&e];
     if (g_session_off) LOG("[RED] audio session activation failed: %s", e.localizedDescription.UTF8String);
-    LOG("audio session: sample rate %.0f Hz, I/O buffer %.2f ms (asked for 5 ms)", s.sampleRate, s.IOBufferDuration * 1000);
+    LOG("audio session: %s, sample rate %.0f Hz, I/O buffer %.2f ms (asked for 5 ms)", muted ? "ambient (Game audio off, mixes with other audio)" : "playback", s.sampleRate, s.IOBufferDuration * 1000);
 }
 
 // Real audio output is suspended (the silent sink paces the game) while the app is in the background or another audio session has interrupted ours (Siri, an alarm, a call).
