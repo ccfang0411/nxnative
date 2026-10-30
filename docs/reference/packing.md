@@ -25,6 +25,13 @@
 - **Fix:** count uncompressed bytes as they are read and compare them with the listed size before completing either streamed method. A mismatch stops the pack and removes the partial archive, preserving the previous IPA and its reuse index. Regression tests cover growth and shrinkage with both deflate and store.
 - **Found on:** synthetic IPA inputs while reviewing [PR #279](https://github.com/seedds/nxnative/pull/279); no game files required.
 
+### A hand-signed app carries an incomplete shader library
+
+- **Symptom:** a hand-signed iOS app boots, but the 3D picture and menu text are corrupt and the screen flickers; its `log.txt` repeats `[RED] failed to load shader <key>_b: cannot open …/msl/b-<chain>/<key>_b.metallib` or `no reflection json`, and the app's shader directory holds fewer files than the build's (`_b.metallib`, `_b.json` and the `_ba` / `_bf` / `_bp` variants).
+- **Cause:** the app bundle was signed after its `msl/b-<chain>/` was copied incompletely — a recursive clone/copy of the 32,027-file directory left about 3,000 files out. The signature seals what is present, so `codesign --verify` passes and `pack_ipa.py` packs only the files the app holds; the host then fails those shader loads at run time.
+- **Fix:** remove the app's `msl/`, copy the whole shader directory with `ditto` (not `cp -c -R`), and count it against the build's source before signing: Fire Emblem Engage 2.0.0 has 9,280 `_b.metallib`, 9,280 `_b.json`, 4,580 `_ba`, 3,404 `_bf` and 4,573 `_bp` (32,027 files). Sign and `codesign --verify`, then pack every file (do not skip `_bp` when the signature covers it) and re-count inside the IPA. A missing shader library is a packing error, not a rendering one: no host or shader-chain change fixes it.
+- **Found on:** a hand-signed [Fire Emblem Engage](../../dm/games/0100A6301214E000/README.md) IPA (chain `6ad4d951e3c8`, 2026-10-30) with 8,308 of 9,280 `_b.metallib` and 8,314 `_b.json`; the rebuilt app with all 32,027 shader files (chain `b3ca4b7c621f`) removed the corruption. Applies to any game whose app bundle is signed by hand.
+
 ## RomFS images
 
 ### RomFS folder transfers fail or leave stale game files
