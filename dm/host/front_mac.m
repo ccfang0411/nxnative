@@ -124,7 +124,7 @@ static void pad_read(GCExtendedGamepad *g) {
     if (!g_input_on) return;
     int p = g_merge ? 0 : pad_slot_of(&g_slots, (__bridge const void *)g.controller); if (p < 0) return;
     dm_haptics_apple_controller(p, g.controller);
-    uint64_t m = dm_pad_face(g);   // by position, a Nintendo pad by its labels
+    uint64_t m = dm_pad_face_mode(g, DM_GAME_PAD_MAP_LABELS);   // by position, a Nintendo pad by its labels, or every pad by label (pad_map)
     #define K(btn, bit) if (btn.isPressed) m |= bit
     K(g.leftShoulder, DM_BTN_L); K(g.rightShoulder, DM_BTN_R); K(g.leftTrigger, DM_BTN_ZL); K(g.rightTrigger, DM_BTN_ZR);
     K(g.buttonMenu, DM_BTN_PLUS); K(g.buttonOptions, DM_BTN_MINUS); K(g.leftThumbstickButton, DM_BTN_LS); K(g.rightThumbstickButton, DM_BTN_RS);   // nil on pads without them: not pressed

@@ -24,6 +24,13 @@ modules	main subsdk0 sdk
 romfs_marker	Data/data.unity3d
 zip_store	.bundle:.wem:.unity3d:.metallib
 
+# ---- Input ----
+# The touch gamepad starts in the comfort layout: buttons and the left D-pad, no left stick or right stick, with Xbox-coloured ABXY; physical controllers map by label
+# (Xbox A = game A, B = B, X = X, Y = Y). Long-press the 舒适 layout button to drag the controls; tap 完成 to save.
+pad_layout	comfort
+pad_theme	xbox
+pad_map	labels
+
 # ---- Presentation ----
 # The original sets present interval 2 (30 fps on the Switch). A rewriter cut on 2.0.0 main (patches.py, QualitySettings.set_vSyncCount can only set 1) takes the game's own 60 fps path:
 # frame-counted logic steps by GameTime.VsyncFixedCount (= vSyncCount), so a count of 1 at 60 fps runs at the speed of the original at 30 fps. The game then sets interval 1 itself and game mode gives 60 fps.
