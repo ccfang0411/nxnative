@@ -115,7 +115,7 @@ def header(g):
     if sf not in ('bfttf', 'ttf'): sys.exit(f'{g.id}: shared_font must be bfttf or ttf: {sf}')
     pl = g.get('pad_layout', 'simple')   # the virtual gamepad's first layout (DmGamepad.m; afterwards whatever the player switched to in game is kept): simple = 2D, full = 3D (D-pad, right stick, L3 / R3),
     if pl not in ('simple', 'full', 'touch', 'comfort'): sys.exit(f'{g.id}: pad_layout must be simple, full, touch or comfort: {pl}')   # touch = Tap (no control: every touch goes to the game's touch screen); comfort = buttons and the D-pad, no stick
-    pt = g.get('pad_theme', 'mono')   # the virtual gamepad's ABXY colours (DmGamepad.m): mono = translucent white, xbox = A green, B red, X blue, Y yellow
+    pt = g.get('pad_theme', 'xbox')   # the virtual gamepad's colours (DmGamepad.m), the same in every game unless a profile says otherwise: xbox = A green, B red, X blue, Y yellow, blue D-pad and left stick; mono = the translucent white
     if pt not in ('mono', 'xbox'): sys.exit(f'{g.id}: pad_theme must be mono or xbox: {pt}')
     pmap = g.get('pad_map', 'position')   # physical controllers map by position (Switch layout: bottom = B, right = A, top = X, left = Y) or by label (Xbox: A = A, B = B, X = X, Y = Y)
     if pmap not in ('position', 'labels'): sys.exit(f'{g.id}: pad_map must be position or labels: {pmap}')

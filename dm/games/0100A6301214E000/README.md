@@ -10,10 +10,10 @@ Update 2.0.0 (v327680) over the base game, SDK 12.3.7. Unity 2020.3.18f1 IL2CPP 
 | Node area cut 1 GB → 62 MB | `dm/tools/sdk_patches.py`, `sdk` build `56ec2474…` (`sdk+0x346430`, `sdk+0x3464cc`) | the alias region ran out of address space minutes into play; see [Memory](#memory) |
 | 5 GB guest layout: `mem_reserve 0x140000000`, `mem_alias 0x118000000`, `mem_stack 0x10000000`, `app_pool 0xA0000000` | [`game.tsv`](game.tsv) | 256 MB in front + 4.375 GB alias region + 256 MB stack region + 128 MB heap region, with a 2.5 GB pool reported. 5 GB is the total proven on a phone |
 | `shader_groups` `engine` / `assets` | `game.tsv` | `data.unity3d` and `Resources/` are the engine's built-ins, `StreamingAssets/` the Addressables bundles |
-| `pad_layout comfort`, `pad_theme xbox`, `pad_map labels` | `game.tsv` | the touch gamepad starts with buttons and the left D-pad (no left or right stick), A/B/X/Y in Xbox colours with a blue D-pad, and physical controllers map by label; long-press 舒适 to drag the controls |
+| `pad_layout comfort`, `pad_map labels` | `game.tsv` | the touch gamepad starts with buttons and the left D-pad (no left or right stick), A/B/X/Y in the default Xbox colours, a blue D-pad, and a blue left stick in the 2D and 3D layouts, and physical controllers map by label; long-press 自定义 to drag the controls |
 | `depth_mode zero` | `game.tsv` | the game sets the near = 0 depth mode, so the pipeline bases made before it runs (the NSP script's Mac prebuild, and a [pipeline archive made offline](../../../docs/development.md#the-pipeline-archive-made-offline) for the iPhone when one is built with `DM_PSO_GPUS`) take its vertex shaders' `main0_z` entries (the host itself follows the mode the game sets) |
 
-The touch gamepad starts in the buttons-only **舒适** layout (tap the layout button for 2D, which brings the stick back); `present_interval` stays `game`.
+The touch gamepad starts in the buttons-only **自定义** layout (tap the layout button for 2D, which brings the stick back); `present_interval` stays `game`.
 
 ## Frame rate
 

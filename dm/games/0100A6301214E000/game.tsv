@@ -26,9 +26,8 @@ zip_store	.bundle:.wem:.unity3d:.metallib
 
 # ---- Input ----
 # The touch gamepad starts in the comfort layout: buttons and the left D-pad, no left stick or right stick, with Xbox-coloured ABXY; physical controllers map by label
-# (Xbox A = game A, B = B, X = X, Y = Y). Long-press the 舒适 layout button to drag the controls; tap 完成 to save.
+# (Xbox A = game A, B = B, X = X, Y = Y). Long-press the 自定义 layout button to drag the controls; tap 完成 to save.
 pad_layout	comfort
-pad_theme	xbox
 pad_map	labels
 
 # ---- Presentation ----

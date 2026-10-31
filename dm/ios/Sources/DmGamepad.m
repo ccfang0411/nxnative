@@ -1,5 +1,5 @@
 // Virtual gamepad (Nintendo button positions) + physical controllers (GameController), handed to the host through dm_input_set and dm_pad_set_player (hle_hid.c, bit layout in dm_input.h).
-//   Three layouts, four in handheld mode; one tap on the layout button at the top centre (labelled with the current layout, "2D" / "3D" / "舒适" / "Tap") goes to the next, and the choice is kept in NSUserDefaults (each game is its own app, so per game); the first launch uses the game profile's pad_layout (DM_GAME_PAD_LAYOUT).
+//   Three layouts, four in handheld mode; one tap on the layout button at the top centre (labelled with the current layout, "2D" / "3D" / "自定义" / "Tap") goes to the next, and the choice is kept in NSUserDefaults (each game is its own app, so per game); the first launch uses the game profile's pad_layout (DM_GAME_PAD_LAYOUT).
 //   Tap (touch): no control but the layout button, every other touch goes to the game's touch screen; offered only while the game is in handheld mode, the only one in which it reads the touch screen (Balatro, played by touch).
 //   Comfort (buttons and the left D-pad, profile pad_layout comfort): A/B/X/Y, shoulders, − / + and the left D-pad only; no left stick, right stick or L3 / R3 (Fire Emblem Engage). Its controls are larger and further in from the corners.
 //   Long-press the layout button (0.6 s) to open the drag editor: 完成 replaces its label, 重置 appears beside it, and any control can be dragged; positions are saved per layout and game in NSUserDefaults and 重置 clears them.
@@ -178,6 +178,7 @@ static void pads_start(void);   // Physical controllers, below
 static UIColor *k_idle, *k_on, *k_line, *k_ringFill, *k_text, *k_textOn;
 static UIColor *k_faceIdle[4], *k_faceOn[4], *k_faceText[4], *k_faceTextOn[4];   // A/B/X/Y, by the profile's pad_theme
 static UIColor *k_dpadIdle, *k_dpadOn;   // the D-pad's arms, blue with pad_theme xbox
+static UIColor *k_stickRing, *k_stickLine, *k_stickKnob, *k_stickKnobOn;   // the left stick's ring and knob, the same blue accent with pad_theme xbox
 static CAShapeLayer *shape(CALayer *parent) {
     CAShapeLayer *l = [CAShapeLayer layer];
     l.fillColor = k_idle.CGColor; l.strokeColor = k_line.CGColor; l.lineWidth = 1.5;
@@ -214,16 +215,17 @@ static BOOL fullOnly(int b) { return b == B_LS || b == B_RS || b >= B_LEFT; }   
                     k_faceText[i] = k_faceTextOn[i] = i == 3 ? [UIColor colorWithWhite:0 alpha:0.8] : UIColor.whiteColor;
                 }
             }
-            k_dpadIdle = k_idle; k_dpadOn = k_on;
-            if (DM_GAME_PAD_THEME) {   // the D-pad gets a blue accent so it reads as a control, not blank space
+            k_dpadIdle = k_idle; k_dpadOn = k_on; k_stickRing = k_ringFill; k_stickLine = k_line; k_stickKnob = k_idle; k_stickKnobOn = k_on;
+            if (DM_GAME_PAD_THEME) {   // the D-pad and the left stick get a blue accent so they read as controls, not blank space
                 UIColor *d = [UIColor colorWithRed:0.23 green:0.51 blue:0.96 alpha:1];
                 k_dpadIdle = [d colorWithAlphaComponent:0.55]; k_dpadOn = [d colorWithAlphaComponent:0.92];
+                k_stickRing = [d colorWithAlphaComponent:0.12]; k_stickLine = [d colorWithAlphaComponent:0.60]; k_stickKnob = k_dpadIdle; k_stickKnobOn = k_dpadOn;
             }
         });
         _controls = [CALayer layer]; [self.layer addSublayer:_controls];
-        _ring = shape(_controls); _ring.fillColor = k_ringFill.CGColor;
-        _knob = shape(_controls);
-        CAShapeLayer *in = [CAShapeLayer layer]; in.fillColor = nil; in.strokeColor = k_line.CGColor; in.lineWidth = 1.5;   // inner ring of the knob
+        _ring = shape(_controls); _ring.fillColor = k_stickRing.CGColor; _ring.strokeColor = k_stickLine.CGColor;
+        _knob = shape(_controls); _knob.fillColor = k_stickKnob.CGColor; _knob.strokeColor = k_stickLine.CGColor;
+        CAShapeLayer *in = [CAShapeLayer layer]; in.fillColor = nil; in.strokeColor = k_stickLine.CGColor; in.lineWidth = 1.5;   // inner ring of the knob
         [_knob addSublayer:in];
         static NSString *const names[B_N] = {@"A", @"B", @"X", @"Y", @"L3", @"R3", @"L", @"R", @"ZL", @"ZR", @"+", @"−"};
         for (int b = 0; b < B_N; b++) {
@@ -255,7 +257,7 @@ static BOOL fullOnly(int b) { return b == B_LS || b == B_RS || b >= B_LEFT; }   
     [CATransaction begin]; [CATransaction setDisableActions:YES];
     for (int b = 0; b < B_N; b++) _key[b].hidden = _tap || (b == B_LS || b == B_RS ? !_full : b >= B_LEFT ? !(_full || _comfort) : NO);
     _ring.hidden = _knob.hidden = _tap || _comfort;
-    _swapLabel.string = _editing ? @"完成" : _tap ? @"Tap" : _comfort ? @"舒适" : _full ? @"3D" : @"2D";
+    _swapLabel.string = _editing ? @"完成" : _tap ? @"Tap" : _comfort ? @"自定义" : _full ? @"3D" : @"2D";
     _reset.hidden = _resetLabel.hidden = _hint.hidden = !_editing;
     [CATransaction commit];
 }
@@ -619,13 +621,13 @@ static void placeLabel(CATextLayer *t, CGPoint c, CGFloat fs) {
         _key[b].lineWidth = sel ? 3 : 1.5; _key[b].strokeColor = (sel ? UIColor.whiteColor : k_line).CGColor;
     }
     BOOL stickSel = _editing && _editTarget == E_STICK;
-    _ring.lineWidth = stickSel ? 3 : 1.5; _ring.strokeColor = (stickSel ? UIColor.whiteColor : k_line).CGColor;
+    _ring.lineWidth = stickSel ? 3 : 1.5; _ring.strokeColor = (stickSel ? UIColor.whiteColor : k_stickLine).CGColor;
     BOOL dpadSel = _editing && _editTarget == E_DPAD;
     for (int b = B_LEFT; b <= B_DOWN; b++) { _key[b].lineWidth = dpadSel ? 3 : 1.5; _key[b].strokeColor = (dpadSel ? UIColor.whiteColor : k_line).CGColor; }
     _reset.fillColor = k_idle.CGColor; _resetLabel.foregroundColor = k_text.CGColor; _hint.foregroundColor = [UIColor colorWithWhite:1 alpha:0.8].CGColor;
     _swap.fillColor = (_swapHeld ? k_on : k_idle).CGColor; _swapLabel.foregroundColor = (_swapHeld ? k_textOn : k_text).CGColor;
     CGPoint h = self.stickHome, o = [self knobOffset:0];
-    _knob.position = CGPointMake(h.x + o.x, h.y + o.y); _knob.fillColor = (_stick[0] ? k_on : k_idle).CGColor;
+    _knob.position = CGPointMake(h.x + o.x, h.y + o.y); _knob.fillColor = (_stick[0] ? k_stickKnobOn : k_stickKnob).CGColor;
     [CATransaction commit];
 }
 
