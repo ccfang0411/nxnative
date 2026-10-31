@@ -9,6 +9,23 @@ import SwiftUI
 
 private func info(_ key: String) -> String? { Bundle.main.object(forInfoDictionaryKey: key) as? String }
 
+// The program's own version (DMCommit, written by pack_app.py) and when this build was made (the launcher executable's modification time), the same line as the iPhone
+// launcher's. An older app without DMCommit shows the game's version.
+private func versionText() -> String {
+    if let commit = info("DMCommit"), !commit.isEmpty {
+        var s = "\(LauncherStrings.translated("Program")) \(commit.prefix(8))"
+        if let url = Bundle.main.executableURL,
+           let date = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate {
+            let f = DateFormatter()
+            f.locale = Locale(identifier: "en_US_POSIX")
+            f.dateFormat = "yyyy-MM-dd HH:mm"
+            s += " · \(LauncherStrings.translated("built")) \(f.string(from: date))"
+        }
+        return s
+    }
+    return "\(LauncherStrings.translated("Version")) \(info("CFBundleShortVersionString") ?? "1.0")"
+}
+
 struct LauncherView: View {
     @ObservedObject var m: LauncherModel
     let done: (Bool) -> Void
@@ -21,8 +38,8 @@ struct LauncherView: View {
             HStack(spacing: 12) {
                 Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 64, height: 64).accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(info("CFBundleName") ?? "Game").font(.title2.weight(.semibold))
-                    Text("Version \(info("CFBundleShortVersionString") ?? "1.0")").foregroundStyle(.secondary)
+                    Text(info("CFBundleName") ?? LauncherStrings.translated("Game")).font(.title2.weight(.semibold))
+                    Text(versionText()).foregroundStyle(.secondary)
                 }
                 Spacer()
             }
@@ -31,15 +48,15 @@ struct LauncherView: View {
                 settingSections(basic: true)
                 CloudSavesSection()
                 Section {
-                    DisclosureGroup("Advanced settings", isExpanded: $advanced) {}
+                    DisclosureGroup(LauncherStrings.translated("Advanced settings"), isExpanded: $advanced) {}
                 }
                 if advanced {
                     settingSections(basic: false)
                     Section {
-                        Button("Reset to tested defaults") { m.reset() }
+                        Button(LauncherStrings.translated("Reset to tested defaults")) { m.reset() }
                             .disabled(!m.changed)
                     } footer: {
-                        Text("Brings back all settings this game was tested with.")
+                        Text(LauncherStrings.translated("Brings back all settings this game was tested with."))
                     }
                 }
             }
@@ -50,10 +67,10 @@ struct LauncherView: View {
                 fit(extraHeight)
             }
             HStack {
-                Toggle("Show this window at launch", isOn: $show).toggleStyle(.checkbox)
+                Toggle(LauncherStrings.translated("Show this window at launch"), isOn: $show).toggleStyle(.checkbox)
                 Spacer()
-                Button("Quit") { done(false) }
-                Button("Play") { done(true) }.keyboardShortcut(.defaultAction)
+                Button(LauncherStrings.translated("Quit")) { done(false) }
+                Button(LauncherStrings.translated("Play")) { done(true) }.keyboardShortcut(.defaultAction)
             }
             .padding(20)
         }
@@ -64,8 +81,8 @@ struct LauncherView: View {
         ForEach(m.sections(basic: basic), id: \.self) { section in
             let rows = m.rows(in: section, basic: basic)
             if !rows.isEmpty {
-                Section(section) {
-                    ForEach(rows) { SettingRow(s: $0, m: m) }
+                Section(LauncherStrings.translated(section)) {
+                    ForEach(rows) { SettingRow(s: $0, m: m, t: LauncherStrings.translated) }
                 }
             }
         }
@@ -84,26 +101,26 @@ struct CloudSavesSection: View {
 
     var body: some View {
         Section {
-            LabeledContent("Cloud saves") {
-                Text(fixed.map { "\(Self.shown($0)) (env.txt)" } ?? (folder.isEmpty ? "Off" : Self.shown(folder)))
+            LabeledContent(LauncherStrings.translated("Cloud saves")) {
+                Text(fixed.map { "\(Self.shown($0)) (env.txt)" } ?? (folder.isEmpty ? LauncherStrings.translated("Off") : Self.shown(folder)))
                     .foregroundStyle(.secondary).lineLimit(1).truncationMode(.head)
             }
             if fixed == nil {
                 HStack {
-                    Button(folder.isEmpty ? "Choose a folder…" : "Choose a different folder…", action: choose)
-                    if !folder.isEmpty { Button("Turn off") { folder = "" } }
+                    Button(LauncherStrings.translated(folder.isEmpty ? "Choose a folder…" : "Choose a different folder…"), action: choose)
+                    if !folder.isEmpty { Button(LauncherStrings.translated("Turn off")) { folder = "" } }
                 }
             }
         } footer: {
-            Text("Choose the iCloud Drive folder the iPhone app uses for this game. The save comes in when the game starts and goes out after each save; a save that is replaced is kept in the save's -backups folder.")
+            Text(LauncherStrings.translated("Choose the iCloud Drive folder the iPhone app uses for this game. The save comes in when the game starts and goes out after each save; a save that is replaced is kept in the save's -backups folder."))
         }
     }
 
     private func choose() {
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true; panel.canChooseFiles = false; panel.allowsMultipleSelection = false; panel.canCreateDirectories = true
-        panel.prompt = "Use for Cloud Saves"
-        panel.message = "The folder the iPhone app chose in its launcher's Cloud saves"
+        panel.prompt = LauncherStrings.translated("Use for Cloud Saves")
+        panel.message = LauncherStrings.translated("The folder the iPhone app chose in its launcher's Cloud saves")
         panel.directoryURL = URL(fileURLWithPath: folder.isEmpty ? Self.drive : folder)
         if panel.runModal() == .OK, let url = panel.url { folder = url.path }
     }
@@ -113,7 +130,7 @@ struct CloudSavesSection: View {
     /// A path under iCloud Drive as the Finder and the Files app name it: iCloud Drive › Documents › dev › Zelda; any other path as it is
     static func shown(_ path: String) -> String {
         guard path == drive || path.hasPrefix(drive + "/") else { return path }
-        return (["iCloud Drive"] + path.dropFirst(drive.count).split(separator: "/").map(String.init)).joined(separator: " › ")
+        return ([LauncherStrings.translated("iCloud Drive")] + path.dropFirst(drive.count).split(separator: "/").map(String.init)).joined(separator: " › ")
     }
 }
 
@@ -125,10 +142,10 @@ private final class Launcher: NSObject, NSApplicationDelegate, NSWindowDelegate 
     init(_ model: LauncherModel) { self.model = model }
 
     func applicationDidFinishLaunching(_ n: Notification) {
-        let name = info("CFBundleName") ?? "Game"
+        let name = info("CFBundleName") ?? LauncherStrings.translated("Game")
         let menu = NSMenu(), item = NSMenuItem(), app = NSMenu()
-        app.addItem(withTitle: "Close Window", action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
-        app.addItem(withTitle: "Quit \(name)", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        app.addItem(withTitle: LauncherStrings.translated("Close Window"), action: #selector(NSWindow.performClose(_:)), keyEquivalent: "w")
+        app.addItem(withTitle: "\(LauncherStrings.translated("Quit")) \(name)", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         item.submenu = app; menu.addItem(item); NSApp.mainMenu = menu
         let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 560, height: 660), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
         w.title = name; w.isReleasedWhenClosed = false; w.delegate = self

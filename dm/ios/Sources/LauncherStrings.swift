@@ -1,4 +1,4 @@
-// The iOS launcher's player-facing text, in Chinese on a Chinese device and English otherwise (the Mac window keeps its English).
+// The launcher's player-facing text, shared by the iOS launcher and the Mac app's settings window: Chinese on a Chinese system and English otherwise.
 // The settings themselves come from dm/launcher.json, whose labels, notes and choice labels are English (dm/games/settings.tsv);
 // translated() looks one up in this table and returns it as it is when there is no entry, so a new setting shows its English name until it is translated here.
 import Foundation
@@ -104,5 +104,18 @@ enum LauncherStrings {
         "Play": "开始游戏",
         "Set at launch": "启动时设置",
         "Set by an env file": "由环境文件设置",
+
+        // Mac settings window
+        "Advanced settings": "高级设置",
+        "Show this window at launch": "启动时显示此窗口",
+        "Quit": "退出",
+        "Close Window": "关闭窗口",
+        "Choose a folder…": "选择文件夹…",
+        "Turn off": "关闭",
+        "Use for Cloud Saves": "用于云存档",
+        "The folder the iPhone app chose in its launcher's Cloud saves": "iPhone 应用启动器「云存档」中选择的文件夹",
+        "Choose the iCloud Drive folder the iPhone app uses for this game. The save comes in when the game starts and goes out after each save; a save that is replaced is kept in the save's -backups folder.":
+            "选择 iPhone 应用为此游戏使用的 iCloud 云盘文件夹。游戏启动时会取回存档，每次存档后上传；被替换的存档会留在该存档的 -backups 文件夹中。",
+        "iCloud Drive": "iCloud 云盘",
     ]
 }

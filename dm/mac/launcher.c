@@ -40,6 +40,24 @@ static void add_key(char **list, const char *k) {   // a space-separated list of
 
 static void forward(int sig) { if (g_child > 0) kill(g_child, sig); }
 
+static int ui_zh(void) {   // the launcher's UI language, as LauncherStrings.swift decides it (the system's preferred language)
+    static int zh = -1;
+    if (zh < 0) {
+        zh = 0;
+        CFArrayRef langs = CFLocaleCopyPreferredLanguages();
+        if (langs) {
+            if (CFArrayGetCount(langs)) {
+                char s[8];
+                CFStringRef first = CFArrayGetValueAtIndex(langs, 0);
+                if (CFStringGetCString(first, s, sizeof s, kCFStringEncodingUTF8) && s[0] == 'z' && s[1] == 'h') zh = 1;
+            }
+            CFRelease(langs);
+        }
+    }
+    return zh;
+}
+static const char *ui(const char *en, const char *cn) { return ui_zh() ? cn : en; }
+
 static int info_string(const char *key, char *out, size_t n) {   // a string key of the bundle's Info.plist
     CFBundleRef b = CFBundleGetMainBundle(); if (!b) return 0;
     CFStringRef k = CFStringCreateWithCString(NULL, key, kCFStringEncodingUTF8);
@@ -156,7 +174,8 @@ int main(int argc, char **argv) {
     char name[256] = "nxnative", id[64] = "", marker[512] = "", lang[32] = "";
     if (!info_string("CFBundleName", name, sizeof name)) snprintf(name, sizeof name, "nxnative");
     info_string("DMRomfsMarker", marker, sizeof marker); info_string("DMLanguage", lang, sizeof lang);
-    if (!info_string("DMTitleID", id, sizeof id) || strchr(id, '/')) { alert(name, "This app has no title ID in its Info.plist (DMTitleID): pack it again with build_ipa_from_nsp.py --platform mac-app."); return 1; }
+    if (!info_string("DMTitleID", id, sizeof id) || strchr(id, '/')) { alert(name, ui("This app has no title ID in its Info.plist (DMTitleID): pack it again with build_ipa_from_nsp.py --platform mac-app.",
+                                                                                    "此应用的 Info.plist 缺少标题 ID（DMTitleID）：请用 build_ipa_from_nsp.py --platform mac-app 重新打包。")); return 1; }
     struct stat st; snprintf(p, sizeof p, "%s/romfs.img", res);
     int valid_romfs;
     if (!stat(p, &st)) {
@@ -164,7 +183,8 @@ int main(int argc, char **argv) {
         romfs_image_close(image); snprintf(romfs, sizeof romfs, "%s", p);
     } else { snprintf(p, sizeof p, "%s/%s", romfs, marker); valid_romfs = !stat(p, &st); }
     if (access(host, X_OK) || !valid_romfs || !modules_present(dm)) {
-        alert(name, "The game data inside this app is missing or incomplete (Contents/Resources/romfs.img, Contents/Resources/dm or Contents/MacOS/dmhost): pack it again with build_ipa_from_nsp.py --platform mac-app.");
+        alert(name, ui("The game data inside this app is missing or incomplete (Contents/Resources/romfs.img, Contents/Resources/dm or Contents/MacOS/dmhost): pack it again with build_ipa_from_nsp.py --platform mac-app.",
+                       "此应用中的游戏数据缺失或不完整（Contents/Resources/romfs.img、Contents/Resources/dm 或 Contents/MacOS/dmhost）：请用 build_ipa_from_nsp.py --platform mac-app 重新打包。"));
         return 1;
     }
     const char *home = getenv("HOME"); if (!home || !*home) return 1;
