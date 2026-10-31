@@ -21,30 +21,30 @@ private struct CloudSavesSection: View {
     var body: some View {
         Section {
             HStack {
-                Text("Cloud saves")
+                Text(LauncherStrings.translated("Cloud saves"))
                 Spacer()
-                Text(folder.isEmpty ? "Off" : (folder as NSString).lastPathComponent)
+                Text(folder.isEmpty ? LauncherStrings.translated("Off") : (folder as NSString).lastPathComponent)
                     .foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
             }
-            Button(folder.isEmpty ? "Choose a folder in iCloud Drive…" : "Choose a different folder…") { picking = true }
+            Button(LauncherStrings.translated(folder.isEmpty ? "Choose a folder in iCloud Drive…" : "Choose a different folder…")) { picking = true }
             if !folder.isEmpty {
-                Button("Turn off cloud saves", role: .destructive) {
+                Button(LauncherStrings.translated("Turn off cloud saves"), role: .destructive) {
                     dm_clear_cloud_saves(); refresh(); note = ""
                 }
             }
         } footer: {
             Text(note.isEmpty
-                 ? "Choose a folder in iCloud Drive, and the same one in the Mac app's Cloud saves. The save comes in when the game starts and goes out after each save; a save that is replaced is kept in save-backups."
+                 ? LauncherStrings.translated("Choose a folder in iCloud Drive, and the same one in the Mac app's Cloud saves. The save comes in when the game starts and goes out after each save; a save that is replaced is kept in save-backups.")
                  : note)
         }
         .sheet(isPresented: $picking) {
             DocumentPicker(types: [.folder]) { url in
                 picking = false
                 if dm_store_cloud_saves(url) {
-                    note = "Saved. The game uses this folder when you press Play."
+                    note = LauncherStrings.translated("Saved. The game uses this folder when you press Play.")
                     refresh()
                 } else {
-                    note = "That folder could not be remembered — try a different one."
+                    note = LauncherStrings.translated("That folder could not be remembered — try a different one.")
                 }
             } onCancel: { picking = false }
         }
@@ -55,7 +55,7 @@ private struct CloudSavesSection: View {
         var stale: ObjCBool = false
         folder = dm_cloud_saves_path(&stale) ?? ""
         if stale.boolValue && folder.isEmpty {
-            note = "The folder you chose before is no longer readable (the app was signed differently). Please choose it again."
+            note = LauncherStrings.translated("The folder you chose before is no longer readable (the app was signed differently). Please choose it again.")
         }
     }
 }
@@ -105,10 +105,10 @@ private struct LauncherView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 22))
                             .accessibilityHidden(true)
                     }
-                    Text((info("CFBundleDisplayName") as? String) ?? "Game")
+                    Text((info("CFBundleDisplayName") as? String) ?? LauncherStrings.translated("Game"))
                         .font(.title.weight(.bold)).multilineTextAlignment(.center)
-                    Text("Version \((info("CFBundleShortVersionString") as? String) ?? "")")
-                        .font(.callout).foregroundStyle(.secondary)
+                    Text(versionText)
+                        .font(.callout).foregroundStyle(.secondary).multilineTextAlignment(.center)
                     playButton
                 }
                 .padding(16)
@@ -117,21 +117,21 @@ private struct LauncherView: View {
                     ForEach(m.sections, id: \.self) { section in
                         let rows = m.rows(in: section)
                         if !rows.isEmpty {
-                            Section(section) {
-                                ForEach(rows) { SettingRow(s: $0, m: m) }
+                            Section(LauncherStrings.translated(section)) {
+                                ForEach(rows) { SettingRow(s: $0, m: m, t: LauncherStrings.translated) }
                             }
                         }
                     }
                     Section {
-                        Button("Reset to tested defaults") { m.reset() }
+                        Button(LauncherStrings.translated("Reset to tested defaults")) { m.reset() }
                             .disabled(!m.changed)
                     } footer: {
-                        Text("Brings back all settings this game was tested with.")
+                        Text(LauncherStrings.translated("Brings back all settings this game was tested with."))
                     }
                     CloudSavesSection()
                     Section {
                         HStack {
-                            Text("Memory available")
+                            Text(LauncherStrings.translated("Memory available"))
                             Spacer()
                             Text(ByteCountFormatter.string(fromByteCount: Int64(memory), countStyle: .memory)).monospacedDigit().foregroundStyle(.secondary)
                         }
@@ -151,8 +151,16 @@ private struct LauncherView: View {
         }
     }
 
+    // The program's own version and when this build was made (DMProgramVersion / DMBuildTime in Info.plist, set by build_ipa.sh); an older bundle without them shows its version
+    private var versionText: String {
+        if let program = info("DMProgramVersion") as? String, let built = info("DMBuildTime") as? String {
+            return "\(LauncherStrings.translated("Program")) \(program) · \(LauncherStrings.translated("built")) \(built)"
+        }
+        return "\(LauncherStrings.translated("Version")) \((info("CFBundleShortVersionString") as? String) ?? "")"
+    }
+
     @ViewBuilder var playButton: some View {
-        let button = Button(action: play) { Text("Play").font(.title3.weight(.semibold)).frame(maxWidth: 220) }.controlSize(.large)
+        let button = Button(action: play) { Text(LauncherStrings.translated("Play")).font(.title3.weight(.semibold)).frame(maxWidth: 220) }.controlSize(.large)
         if #available(iOS 26.0, *) { button.buttonStyle(.glassProminent) } else { button.buttonStyle(.borderedProminent) }
     }
 

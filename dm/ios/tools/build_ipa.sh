@@ -38,6 +38,9 @@ VNACP=$(dirname "$ROMFS")/control.nacp; [ -f "$VNACP" ] || VNACP=$W/data/v0/cont
 export LC_ALL=C DM_BUNDLE_ID=${DM_BUNDLE_ID:-org.nxnative.$(echo "$GAME" | tr 'A-Z' 'a-z')} DM_DISPLAY_NAME DM_APP_VERSION DM_APP_CATEGORY=$(gp app_category) DM_TEAM_ID=${DM_TEAM_ID:-0000000000}   # placeholder identity: unsigned, the install tool replaces it
 if [ "${DM_SHOW_FPS:-0}" = 1 ]; then export DM_SHOW_FPS=YES; else export DM_SHOW_FPS=NO; fi
 export DM_LANG=${DM_LANG:-en-US}
+DM_PROGRAM_VERSION=$(git -C "$DM/.." describe --tags --always --dirty 2> /dev/null || echo unknown)   # the launcher shows the program's own version (this checkout's commit) and when it was built
+DM_BUILD_TIME=$(date '+%Y-%m-%d %H:%M')
+export DM_PROGRAM_VERSION DM_BUILD_TIME
 if [ "$PREPARE_XCODE" = YES ]; then
   IOS=${DM_XCODE_PROJECT_DIR:-$W/xcode}
   mkdir -p "$IOS" || die "mkdir $IOS"

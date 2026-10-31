@@ -54,6 +54,7 @@ def main():
     env = dict(os.environ, GAME=profile.id, DM_GAME=profile.id,
                DM_BUNDLE_ID='org.nxnative.ci', DM_DISPLAY_NAME='CI build fixture',
                DM_APP_VERSION='1.0', DM_APP_CATEGORY=profile.get('app_category'),
+               DM_PROGRAM_VERSION='ci', DM_BUILD_TIME='ci',
                DM_TEAM_ID='', DM_SCHEME_NAME='DmIOS', DM_APPICON='',
                DM_SHOW_FPS='NO', DM_LANG='en-US')
 

@@ -32,6 +32,8 @@ targets:
         CFBundleDisplayName: ${DM_DISPLAY_NAME}   # the game name in the base NSP (set by build_ipa.sh)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundleShortVersionString: $(MARKETING_VERSION)
+        DMProgramVersion: ${DM_PROGRAM_VERSION}     # the program's own version (the launcher's line; set by build_ipa.sh)
+        DMBuildTime: ${DM_BUILD_TIME}               # when this build was made (the launcher's line; set by build_ipa.sh)
         UILaunchStoryboardName: ""
         UIFileSharingEnabled: true          # Documents (log.txt, saves) visible in the Files app
         LSSupportsOpeningDocumentsInPlace: true
