@@ -82,6 +82,7 @@ Game-specific findings. The general host changes they led to are listed under [F
 ## Found on this game
 
 - [Benchmark captures perturb the measured frame pacing](../../../docs/reference/frame-rate.md#benchmark-captures-perturb-the-measured-frame-pacing).
+- **Resolved: 1.4.2 at double speed** (packed from a derived profile; its main has none of 1.4.3's frame step stubs): [A derived profile drops the frame step its build lacks](../../../docs/reference/frame-rate.md#a-derived-profile-drops-the-frame-step-its-build-lacks). Measured by fredchu at 30 fps and real speed on 1.4.2; not run here.
 
 General host changes first needed here; each applies to every game:
 
