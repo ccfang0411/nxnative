@@ -21,6 +21,8 @@
 #import <CoreMotion/CoreMotion.h>
 #import <CoreText/CoreText.h>
 #include <pthread.h>
+#include <stdbool.h>
+#import "DmLayout.h"
 #include "dm.h"
 #include "dm_input.h"
 #include "front.h"
@@ -147,11 +149,18 @@ static NSString *const k_offsets_key = @"DmPadOffsets";   // NSUserDefaults: "la
 int dm_opmode(void);   // hle_oe.c: 0 = handheld
 
 @interface DmGamepad : UIView
+- (void)arrange:(DmLayout)layout;
+- (BOOL)menuTakes:(CGPoint)p;
+- (int)padLayout;
+- (void)setPadLayout:(int)l;
+- (void)opmodeChanged;
+- (void)setTouchFeedback:(BOOL)on;
 @end
 static __weak DmGamepad *g_view;
 static void pads_start(void);   // Physical controllers, below
 
 @implementation DmGamepad {
+    DmLayout _layout;   // the front end's picture/controls split (DmLayout.h); the touch gamepad keeps its edge-based geometry
     NSMapTable<UITouch *, NSNumber *> *_owner;     // touch → control (with the key for C_BTN or the stick for C_STICK, << 8)
     UITouch *_stick[2]; CGPoint _stickNow[2];      // the touch holding each stick and where it is now (0 left, 1 right)
     CGPoint _rCentre;                              // the right stick's centre: where its touch landed, dragged along past K_RSTICK_R
@@ -253,6 +262,26 @@ static BOOL fullOnly(int b) { return b == B_LS || b == B_RS || b >= B_LEFT; }   
     return self;
 }
 - (int)layoutIndex { return _comfort ? 3 : _tap ? 2 : _full ? 1 : 0; }
+
+- (void)arrange:(DmLayout)layout { _layout = layout; [self setNeedsLayout]; }
+- (int)padLayout { return [self layoutIndex]; }
+- (void)setPadLayout:(int)l {   // the in-game menu's pick: release every touch first (no key stays held), save, lay out again
+    if (l == 2 && dm_opmode() != 0) l = 0;
+    [self reset];
+    _full = l == 1; _tap = l == 2; _comfort = l == 3;
+    [self loadOffsets];
+    [NSUserDefaults.standardUserDefaults setObject:@(l) forKey:k_layout_key];
+    [self applyLayout]; [self setNeedsLayout];
+}
+- (void)opmodeChanged {   // docked: the Tap layout goes (the game reads no touch screen then), unsaved, so handheld mode at the next start brings it back
+    if (!_tap || dm_opmode() == 0) return;
+    [self reset]; _tap = NO; _full = NO; _comfort = _comfortDefault; [self applyLayout]; [self setNeedsLayout];
+}
+- (void)setTouchFeedback:(BOOL)on {
+    if (!on) { _touchFeedback = nil; return; }
+    if (!_touchFeedback) { _touchFeedback = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight]; [_touchFeedback prepare]; }
+}
+- (BOOL)menuTakes:(CGPoint)p { (void)p; return NO; }
 - (void)applyLayout {   // show / hide the controls for the current layout
     [CATransaction begin]; [CATransaction setDisableActions:YES];
     for (int b = 0; b < B_N; b++) _key[b].hidden = _tap || (b == B_LS || b == B_RS ? !_full : b >= B_LEFT ? !(_full || _comfort) : NO);
@@ -713,3 +742,10 @@ void dm_gamepad_reset(void) {   // On resign active: release everything (a key h
     if (g_merge) dm_pad_set(0, 0, 0, 0, 0);
     else for (int p = 0; p < DM_PLAYERS; p++) if (g_held[p]) dm_pad_set_player(p, 0, 0, 0, 0, 0);
 }
+
+void dm_gamepad_arrange(UIView *view, DmLayout layout) { [(DmGamepad *)view arrange:layout]; }
+void dm_gamepad_opmode_changed(void) { [g_view opmodeChanged]; }
+void dm_gamepad_touch_feedback(bool on) { [g_view setTouchFeedback:on]; }
+int dm_pad_layout(void) { return g_view ? [g_view padLayout] : 0; }
+bool dm_pad_layout_offered(int layout) { return layout == 0 || layout == 1 || (layout == 2 && dm_opmode() == 0); }
+void dm_pad_layout_set(int layout) { [g_view setPadLayout:layout]; }

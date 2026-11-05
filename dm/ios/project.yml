@@ -34,13 +34,17 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         DMProgramVersion: ${DM_PROGRAM_VERSION}     # the program's own version (the launcher's line; set by build_ipa.sh)
         DMBuildTime: ${DM_BUILD_TIME}               # when this build was made (the launcher's line; set by build_ipa.sh)
-        UILaunchStoryboardName: ""
+        UILaunchScreen: {}
         UIFileSharingEnabled: true          # Documents (log.txt, saves) visible in the Files app
         LSSupportsOpeningDocumentsInPlace: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationLandscapeRight
           - UIInterfaceOrientationLandscapeLeft
-        UIRequiresFullScreen: true
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeRight
+          - UIInterfaceOrientationLandscapeLeft
         UIStatusBarHidden: true
         UIViewControllerBasedStatusBarAppearance: false
         LSApplicationCategoryType: ${DM_APP_CATEGORY}   # game profile app_category
